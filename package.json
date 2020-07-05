@@ -1,5 +1,5 @@
 {
-  "name": "three-typescript-starter",
+  "name": "circus",
   "version": "1.0.0",
   "description": "three.js + typescript",
   "main": "app.js",
@@ -11,7 +11,6 @@
   "keywords": [],
   "author": "Jared Counts",
   "license": "MIT",
-  "homepage": "https://github.com/pinqy520/three-typescript-starter#readme",
   "devDependencies": {
     "awesome-typescript-loader": "latest",
     "css-loader": "latest",

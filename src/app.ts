@@ -80,6 +80,7 @@ var mouseDown = false;
 
 function onMouseDown(event) {
     mouseDown = true;
+    prevMouse.copy(mouse);
 }
 function onMouseUp(event) {
     mouseDown = false;
@@ -135,14 +136,6 @@ function onMouseMove(event) {
             if (i > 50) {
                 break;
             }
-            // Make sure the coordinate is within the window
-            // if (((int)(x0 / grid.cellSize) < grid.density.length) && ((int)(y0 / grid.cellSize) < grid.density[0].length) &&
-            //   ((int)(x0 / grid.cellSize) > 0) && ((int)(y0 / grid.cellSize) > 0))
-            //   grid.velocity[(int)(x0 / grid.cellSize)][(int)(y0 / grid.cellSize)] += force;
-            // var xNorm = (x0+50)/100;
-            // var yNorm = (y0+50)/100;
-
-            // console.log("b", xNorm, yNorm);
 
             var cellI = 
                 THREE.MathUtils.clamp(x0, 
@@ -166,8 +159,6 @@ function onMouseMove(event) {
             }
         }
     }
-
-
 }
 
 
@@ -195,6 +186,7 @@ function worldToCellCoords(vec) : THREE.Vector2 {
 
 
 function onMouseClick(event) {
+    console.log("click");
     // remap mouse from [-50,50] to [0,1]
     // var mouseXRel = mouse.x - -50;
     // var mouseYRel = mouse.y - -50;
@@ -435,11 +427,47 @@ function render(): void {
     renderer.render(scene, camera);
 }
 
+function onTouchStart(event): void {
+    console.log("touch start");
+    event.preventDefault();
+    const e = {
+        clientX: event.touches[0].pageX,
+        clientY: event.touches[0].pageY
+    }
+    // onMouseClick(e);
+    onMouseDown(e);
+}
+function onTouchMove(event): void {
+    console.log("touch move");
+    // xxx: what does this do?
+    event.preventDefault();
+    const e = {
+        clientX: event.touches[0].pageX,
+        clientY: event.touches[0].pageY
+    }
+    onMouseMove(e);
+}
+// function onTouchEnd(event): void {
+
+// }
+// function onTouchLeave(event): void {
+
+// }
+
+
+window.addEventListener( 'touchmove', onTouchMove, false );
+window.addEventListener( 'touchstart', onTouchStart, false );
+window.addEventListener( 'touchend', onMouseUp, false );
+window.addEventListener( 'touchleave', onMouseUp, false );
 
 window.addEventListener( 'mousemove', onMouseMove, false );
 window.addEventListener( 'mousedown', onMouseDown, false );
 window.addEventListener( 'mouseup', onMouseUp, false );
 window.addEventListener( 'resize', onWindowResize, false );
+
+
+
+
 renderer.domElement.addEventListener("click", onMouseClick, true);
 
 animate();
