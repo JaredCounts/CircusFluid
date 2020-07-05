@@ -7,30 +7,29 @@ import { WaveSolver } from './waveSolver'
  * match the wave solver's current state.
  */
 export class View {
-    private readonly scene : THREE.Scene;
-    private readonly renderer : THREE.WebGLRenderer;
-    private readonly camera : THREE.Camera;
+    private readonly _scene : THREE.Scene;
+    private readonly _renderer : THREE.WebGLRenderer;
+    private readonly _camera : THREE.Camera;
 
-    private readonly material : THREE.MeshBasicMaterial;
-    
-    private readonly waveSolver : WaveSolver;
+    private readonly _material : THREE.MeshBasicMaterial;
+    private readonly _textureWidth : number;
+    private readonly _textureHeight : number;
 
-    private readonly textureWidth : number;
-    private readonly textureHeight : number;
+    private readonly _waveSolver : WaveSolver;
     
     // Pixel data for the on screen texture.
-    private textureData : Uint8Array;
+    private _textureData : Uint8Array;
 
     constructor(window, waveSolver : WaveSolver) {
-        this.waveSolver = waveSolver;
+        this._waveSolver = waveSolver;
 
-        this.scene = new THREE.Scene();
-        this.renderer = new THREE.WebGLRenderer();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this._scene = new THREE.Scene();
+        this._renderer = new THREE.WebGLRenderer();
+        this._renderer.setSize(window.innerWidth, window.innerHeight);
         
         // I somewhat arbitrarily chose a screen that goes [-50,50] along each
         // axis.
-        this.camera = new THREE.OrthographicCamera(
+        this._camera = new THREE.OrthographicCamera(
             /* left */ -50,
             /* right */ 50,
             /* top */ -50,
@@ -38,19 +37,19 @@ export class View {
             /* near */ 0.1,
             /* far */ 7000);
 
-        this.textureWidth = this.waveSolver.GetCellCountX();
-        this.textureHeight = this.waveSolver.GetCellCountY();
+        this._textureWidth = this._waveSolver.GetCellCountX();
+        this._textureHeight = this._waveSolver.GetCellCountY();
 
-        let textureSize = this.textureWidth * this.textureHeight;
-        this.textureData = new Uint8Array(3 * textureSize);
+        let textureSize = this._textureWidth * this._textureHeight;
+        this._textureData = new Uint8Array(3 * textureSize);
 
         let texture = new THREE.DataTexture(
-            this.textureData, 
-            this.textureWidth, 
-            this.textureHeight, 
+            this._textureData, 
+            this._textureWidth, 
+            this._textureHeight, 
             THREE.RGBFormat);
 
-        this.material = new THREE.MeshBasicMaterial({
+        this._material = new THREE.MeshBasicMaterial({
             side: THREE.DoubleSide, 
             map: texture
         });
@@ -58,15 +57,15 @@ export class View {
         // Size the geometry to match the arbitrary screen coordinates I chose
         // above.
         let geometry = new THREE.PlaneGeometry(100, 100);
-        let plane = new THREE.Mesh(geometry, this.material);
-        this.scene.add( plane );
+        let plane = new THREE.Mesh(geometry, this._material);
+        this._scene.add( plane );
 
-        this.camera.position.x = 0;
-        this.camera.position.y = 0;
+        this._camera.position.x = 0;
+        this._camera.position.y = 0;
         // The camera is orthographic, so things don't scale with distance. 
         // That means the z-coordinate we choose here doesn't matter, as long as
         // it's positive.
-        this.camera.position.z = 100;
+        this._camera.position.z = 100;
     }
 
     /**
@@ -74,29 +73,29 @@ export class View {
      */
     Render() : void {
         this._Update();
-        this.renderer.render(this.scene, this.camera);
+        this._renderer.render(this._scene, this._camera);
     }
 
     GetDomElement() {
-        return this.renderer.domElement;
+        return this._renderer.domElement;
     }
 
     private _Update() : void {
         // Update the data texture to reflect the wave solver state.
 
-        let countX = this.waveSolver.GetCellCountX();
-        let countY = this.waveSolver.GetCellCountY();
+        let countX = this._waveSolver.GetCellCountX();
+        let countY = this._waveSolver.GetCellCountY();
 
-        let cellSizeX = this.textureWidth / countX;
-        let cellSizeY = this.textureHeight / countY;
+        let cellSizeX = this._textureWidth / countX;
+        let cellSizeY = this._textureHeight / countY;
 
-        for (let j = 0; j < this.textureHeight; j++) {
-            for (let i = 0; i < this.textureWidth; i++) {
-                let index = i + j * this.textureWidth;
+        for (let j = 0; j < this._textureHeight; j++) {
+            for (let i = 0; i < this._textureWidth; i++) {
+                let index = i + j * this._textureWidth;
 
                 // Calculate the data texture pixel position
-                let x = i / this.textureWidth * 2 - 1;
-                let y = j / this.textureHeight * 2 - 1;
+                let x = i / this._textureWidth * 2 - 1;
+                let y = j / this._textureHeight * 2 - 1;
 
                 let pixel = new THREE.Vector2(x, y);
 
@@ -104,8 +103,8 @@ export class View {
                 let cellI = i / cellSizeX;
                 let cellJ = j / cellSizeY;
 
-                let density = this.waveSolver.GetDensity(cellI, cellJ);
-                let velocity = this.waveSolver.GetVelocity(cellI, cellJ);
+                let density = this._waveSolver.GetDensity(cellI, cellJ);
+                let velocity = this._waveSolver.GetVelocity(cellI, cellJ);
 
                 // Compute the color from HSV space
                 let hsl = this._HsvToHsl(
@@ -117,14 +116,14 @@ export class View {
                 color.setHSL(hsl[0], hsl[1], hsl[2]);
 
                 let stride = index * 3;
-                this.textureData[stride]     = Math.floor(color.r * 255);
-                this.textureData[stride + 1] = Math.floor(color.g * 255);
-                this.textureData[stride + 2] = Math.floor(color.b * 255);
+                this._textureData[stride]     = Math.floor(color.r * 255);
+                this._textureData[stride + 1] = Math.floor(color.g * 255);
+                this._textureData[stride + 2] = Math.floor(color.b * 255);
             }
         }
 
         // Signal the material to update its texture
-        this.material.map.needsUpdate = true;
+        this._material.map.needsUpdate = true;
     }
 
     /**

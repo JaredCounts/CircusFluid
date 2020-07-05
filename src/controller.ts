@@ -8,24 +8,24 @@ import { Bresenham } from './bresenham'
  * Handle user interactions.
  */
 export class Controller {
-    private readonly waveSolver : WaveSolver;
+    private readonly _waveSolver : WaveSolver;
     
     // Keep a map of touch identifiers to "TouchPos"es. We need this just so we 
     // can keep track of the "previous" positions of each touch.
-    private readonly identifierToTouchPos: Map<any, TouchPos>;
+    private readonly _identifierToTouchPos: Map<any, TouchPos>;
 
-    private mousePos : THREE.Vector2;
-    private prevMousePos : THREE.Vector2;
-    private mouseDown : boolean;
+    private _mousePos : THREE.Vector2;
+    private _prevMousePos : THREE.Vector2;
+    private _mouseDown : boolean;
 
     constructor(window, waveSolver : WaveSolver) {
-        this.waveSolver = waveSolver;
+        this._waveSolver = waveSolver;
 
-        this.identifierToTouchPos = new Map<any, TouchPos>();
+        this._identifierToTouchPos = new Map<any, TouchPos>();
 
-        this.mousePos = new THREE.Vector2();
-        this.prevMousePos = new THREE.Vector2();
-        this.mouseDown = false;
+        this._mousePos = new THREE.Vector2();
+        this._prevMousePos = new THREE.Vector2();
+        this._mouseDown = false;
 
         this._RegisterForEvents(window)
     }
@@ -38,7 +38,7 @@ export class Controller {
         let knownIdentifiers = new Set();
 
         // Populate knownIdentifiers with all the touches we have first
-        for (let identifier of this.identifierToTouchPos.keys()) {
+        for (let identifier of this._identifierToTouchPos.keys()) {
             knownIdentifiers.add(identifier);
         }
 
@@ -50,7 +50,7 @@ export class Controller {
                 
                 let cellCoord = this._ScreenToCellCoords(screenPosition);
                 
-                this.waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
+                this._waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
             }
         }
     }
@@ -62,12 +62,12 @@ export class Controller {
         for (let touch of event.touches) {
             let screenPosition = this._PageToScreen(touch.pageX, touch.pageY);
 
-            if (this.identifierToTouchPos.has(touch.identifier)) {
-                this.identifierToTouchPos.get(touch.identifier).SetPos(
+            if (this._identifierToTouchPos.has(touch.identifier)) {
+                this._identifierToTouchPos.get(touch.identifier).SetPos(
                     screenPosition.x, screenPosition.y);
             }
             else {
-                this.identifierToTouchPos.set(
+                this._identifierToTouchPos.set(
                     touch.identifier, 
                     new TouchPos(screenPosition.x, screenPosition.y));
             }
@@ -76,7 +76,7 @@ export class Controller {
         // Apply force along the segment between each touch's prior and current
         // positions.
         let force = 10000;
-        for (let TouchPos of this.identifierToTouchPos.values()) {
+        for (let TouchPos of this._identifierToTouchPos.values()) {
 
             let prevCellCoord = 
                 this._ScreenToCellCoords(
@@ -95,7 +95,7 @@ export class Controller {
     }
 
     HandleTouchEnd(event) : void {
-        // On touch end events, remove any identifier from the identifierToTouchPos 
+        // On touch end events, remove any identifier from the _identifierToTouchPos 
         // map so it doesn't grow indefinitely.
         // This is kind of a roundabout way of doing it. First we create a set,
         // populate it with every touch identifier we know about, then remove 
@@ -105,7 +105,7 @@ export class Controller {
         let identifiersToRemove = new Set();
 
         // Populate identifiersToRemove with all the touches we have first
-        for (let identifier of this.identifierToTouchPos.keys()) {
+        for (let identifier of this._identifierToTouchPos.keys()) {
             identifiersToRemove.add(identifier);
         }
 
@@ -116,19 +116,19 @@ export class Controller {
 
         // Now remove the remaining touches from the master map
         for (let identifier of identifiersToRemove.keys()) {
-            if (this.identifierToTouchPos.has(identifier)) {
-                this.identifierToTouchPos.delete(identifier);
+            if (this._identifierToTouchPos.has(identifier)) {
+                this._identifierToTouchPos.delete(identifier);
             }
         }
     }
 
     HandleMouseDown(event) : void {
-        this.mouseDown = true;
+        this._mouseDown = true;
         this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
     }
 
     HandleMouseUp(event) : void {
-        this.mouseDown = false;
+        this._mouseDown = false;
         this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
     }
 
@@ -137,11 +137,11 @@ export class Controller {
 
         // If the mouse is down, add some force along the segment between
         // the previous and current mouse positions.
-        if (this.mouseDown) {
+        if (this._mouseDown) {
             let force = 10000;
 
-            let prevCellCoord = this._ScreenToCellCoords(this.mousePos);
-            let cellCoord = this._ScreenToCellCoords(this.prevMousePos);
+            let prevCellCoord = this._ScreenToCellCoords(this._mousePos);
+            let cellCoord = this._ScreenToCellCoords(this._prevMousePos);
 
             Bresenham(
                 prevCellCoord.x, prevCellCoord.y,
@@ -154,8 +154,8 @@ export class Controller {
         this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
 
         let force = 250000;
-        let cellCoord = this._ScreenToCellCoords(this.mousePos);
-        this.waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
+        let cellCoord = this._ScreenToCellCoords(this._mousePos);
+        this._waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
     }
 
     /**
@@ -182,18 +182,18 @@ export class Controller {
         let cellI = 
             THREE.MathUtils.clamp(x, 
                 /* min */ 0, 
-                /* max */ this.waveSolver.GetCellCountX() - 1);
+                /* max */ this._waveSolver.GetCellCountX() - 1);
         let cellJ = 
             THREE.MathUtils.clamp(y,
                 /* min */ 0, 
-                /* max */ this.waveSolver.GetCellCountY() - 1);
+                /* max */ this._waveSolver.GetCellCountY() - 1);
         
-        this.waveSolver.AddVelocity(force, cellI, cellJ);
+        this._waveSolver.AddVelocity(force, cellI, cellJ);
     }
 
     private _UpdateMousePos(pos : THREE.Vector2) : void {
-        this.prevMousePos.copy(this.mousePos);
-        this.mousePos = pos;
+        this._prevMousePos.copy(this._mousePos);
+        this._mousePos = pos;
     }
 
     /** 
@@ -216,14 +216,14 @@ export class Controller {
 
         result.x = 
             THREE.MathUtils.clamp(
-                Math.floor(result.x * (this.waveSolver.GetCellCountX()-1)), 
+                Math.floor(result.x * (this._waveSolver.GetCellCountX()-1)), 
                 /* min */ 0, 
-                /* max */ this.waveSolver.GetCellCountX() - 1);
+                /* max */ this._waveSolver.GetCellCountX() - 1);
         result.y = 
             THREE.MathUtils.clamp(
-                Math.floor(result.y * (this.waveSolver.GetCellCountY()-1)),
+                Math.floor(result.y * (this._waveSolver.GetCellCountY()-1)),
                 /* min */ 0, 
-                /* max */ this.waveSolver.GetCellCountY() - 1);
+                /* max */ this._waveSolver.GetCellCountY() - 1);
 
         return result;
     }
