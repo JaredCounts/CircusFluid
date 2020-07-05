@@ -17,8 +17,11 @@ export class Controller {
     private _mousePos : THREE.Vector2;
     private _prevMousePos : THREE.Vector2;
     private _mouseDown : boolean;
+    
+    private readonly _parentElement;
 
-    constructor(window, waveSolver : WaveSolver) {
+
+    constructor(window, parentElement, waveSolver : WaveSolver) {
         this._waveSolver = waveSolver;
 
         this._identifierToTouchPos = new Map<any, TouchPos>();
@@ -26,6 +29,8 @@ export class Controller {
         this._mousePos = new THREE.Vector2();
         this._prevMousePos = new THREE.Vector2();
         this._mouseDown = false;
+
+        this._parentElement = parentElement;
 
         this._RegisterForEvents(window)
     }
@@ -200,9 +205,13 @@ export class Controller {
      * Convert coordinates from page space to screen space.
      */
     private _PageToScreen(pageX, pageY) : THREE.Vector2 {
+
+        let elementX = pageX - this._parentElement.offsetLeft;
+        let elementY = pageY - this._parentElement.offsetTop;
+
         return new THREE.Vector2(
-            ((pageX / window.innerWidth) * 2 - 1) * 50,
-            (-(pageY / window.innerHeight) * 2 + 1) * -50);
+            ((elementX / window.innerWidth) * 2 - 1) * 50,
+            (-(elementY / window.innerHeight) * 2 + 1) * -50);
     }
 
     /** 

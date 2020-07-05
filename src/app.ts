@@ -15,6 +15,10 @@ let cellCountY = Math.floor(window.innerHeight / cellWidth);
 
 let waveSolver = new WaveSolver(cellCountX, cellCountY);
 
+// Defer setting up the view. We do this because we expect a dom element with 
+// the "app" ID, but it won't exist since js in the header gets loaded before
+// the dom elements.
+let view;
 function ResetView() : void {
     let appElement = document.getElementById('app');
 
@@ -31,12 +35,12 @@ function ResetView() : void {
     }
 }
 
-let view;
-
-function OnDOMContentLoaded(event) : void {
-    ResetView();
+// Defer setting up the controller for the same reason as the view.
+let controller;
+function ResetController() : void {
+    let appElement = document.getElementById('app');
+    controller = new Controller(window, appElement, waveSolver);
 }
-document.addEventListener('DOMContentLoaded', OnDOMContentLoaded);
 
 const timestepManager = new TimeManager(
     /* timestep_ms */ 10.0,
@@ -56,8 +60,12 @@ function Animate() : void {
     }
 }
 
-// Setup the controller and its handlers
-let controller = new Controller(window, waveSolver);
+// When the dom content loads, instantiate the view and controller
+function OnDOMContentLoaded(event) : void {
+    ResetView();
+    ResetController();
+}
+document.addEventListener('DOMContentLoaded', OnDOMContentLoaded);
 
 // When window resizes, reset everything.
 function OnWindowResize() {
@@ -65,9 +73,9 @@ function OnWindowResize() {
     cellCountY = Math.floor(window.innerHeight / cellWidth);
     
     waveSolver = new WaveSolver(cellCountX, cellCountY);
-    controller = new Controller(window, waveSolver);
 
     ResetView();
+    ResetController();
 }
 window.addEventListener('resize', OnWindowResize);
 
