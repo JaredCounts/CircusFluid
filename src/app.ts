@@ -4,32 +4,10 @@ import './style.css';
 import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
-import { Controller } from './controller'
-import { TouchPos } from './touchPos'
 import { View } from './view'
+import { Controller } from './controller'
 
-import * as Util from './util'
-
-// Basic THREE.js setup
-// ====================
-
-// create the scene
-// const scene = new THREE.Scene();
-// const camera = new THREE.OrthographicCamera(
-//     /* left */ -50,
-//     /* right */ 50,
-//     /* top */ -50,
-//     /* bottom */ 50,
-//     /* near */ 0.1, 
-//     /* far */ 7000);
-
-// Renderer setup
-// const renderer = new THREE.WebGLRenderer();
-// renderer.setSize(window.innerWidth, window.innerHeight);
-// document.body.appendChild(view.GetDomElement());
-
-
-// Update the renderer and wave solver when the window resizes.
+// When window resizes, reset everything.
 function onWindowResize() {
 
     waveSolver = new WaveSolver(cellCountX, cellCountY);
@@ -39,63 +17,7 @@ function onWindowResize() {
     let oldDomElement = view.GetDomElement();
     view = new View(window, waveSolver);
     document.body.replaceChild(view.GetDomElement(), oldDomElement);
-    // view.GetRenderer().setSize(window.innerWidth, window.innerHeight);
-
-    // var cellCountX = Math.floor(window.innerWidth / cellWidth);
-    // var cellCountY = Math.floor(window.innerHeight / cellWidth);
-    // waveSolver = new WaveSolver(cellCountX, cellCountY);
 }
-
-var textureClock = new THREE.Clock(false);
-var textureTimes = [];
-
-// function GetWaveTexture(waveSolver) : void {
-//     textureClock.start();
-
-//     var r = 0;
-//     var g = 0;
-//     var b = 0;
-
-//     var countX = waveSolver.GetCellCountX();
-//     var countY = waveSolver.GetCellCountY();
-
-//     var cellSizeX = textureWidth / countX;
-//     var cellSizeY = textureHeight / countY;
-
-//     for (let j = 0; j < textureHeight; j++) {
-//         for (let i = 0; i < textureWidth; i++) {
-//             let index = i + j * textureWidth;
-
-//             var x = i/textureWidth * 2 - 1;
-//             var y = j/textureHeight * 2 - 1;
-
-//             var pixel = new THREE.Vector2(x, y);
-
-//             var cellI = i / cellSizeX;
-//             var cellJ = j / cellSizeY;
-
-//             var density = waveSolver.GetDensity(cellI, cellJ);
-//             var velocity = waveSolver.GetVelocity(cellI, cellJ);
-//             var color = new THREE.Color(); // 127 + 127 * Math.sin(velocity * 0.0004)
-
-//             var hsl = Util.hsvToHsl(
-//                 0.5 + 0.5 * Math.sin(density*0.0004), 
-//                 1.0, 
-//                 0.5 + 0.5 * Math.sin(velocity*0.01));
-
-//             color.setHSL(hsl[0], hsl[1], hsl[2]);
-
-//             var stride = index * 3;
-//             textureData[ stride ]     = Math.floor(color.r * 255);
-//             textureData[ stride + 1 ] = Math.floor(color.g * 255);
-//             textureData[ stride + 2 ] = Math.floor(color.b * 255);
-//         }
-//     }
-
-//     textureClock.stop();
-
-//     textureTimes.push(textureClock.getElapsedTime());
-// }
 
 var cellWidth = 5;
 var cellCountX = Math.floor(window.innerWidth / cellWidth);
@@ -147,7 +69,6 @@ function render(): void {
     iter++;
     if (iter % 100 == 0) {
         console.log("fps: " + fps);
-        console.log("texture avg time (ms): " + 1000 * getAverage(textureTimes));
         console.log("solve avg time / iteration (ms): " + 1000 * getAverage(solveTimes));
     }
 
@@ -166,11 +87,7 @@ function render(): void {
         solveTimes.push(solveClock.getElapsedTime());
     }
 
-    // // GetWaveTexture(waveSolver);
-    // material.map.needsUpdate = true;
     view.Render();
-
-    // renderer.render(scene, camera);
 }
 
 function registerControllerHandlers() {
