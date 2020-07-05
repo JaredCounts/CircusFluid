@@ -4,16 +4,11 @@ import './style.css';
 import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
+import { TouchTracker } from './touchTracker'
+import { bresenham } from './bresenham'
 
 // create the scene
 const scene = new THREE.Scene();
-
-// create the camera
-// const camera = new THREE.PerspectiveCamera(
-//     /* fov */ 60, 
-//     /* aspect? */ window.innerWidth / window.innerHeight, 
-//     /* near */ 0.1, 
-//     /* far? */ 7000);
 const camera = new THREE.OrthographicCamera(
     /* left */ -50,
     /* right */ 50,
@@ -23,6 +18,8 @@ const camera = new THREE.OrthographicCamera(
     /* far */ 7000);
 
 const renderer = new THREE.WebGLRenderer();
+
+var identifierToTouch = new Map();
 
 // set size
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -38,38 +35,10 @@ function onWindowResize() {
 // add canvas to dom
 document.body.appendChild(renderer.domElement);
 
-// // add axis to the scene
-// const axis = new THREE.AxesHelper(10);
-
-// scene.add(axis);
-
-// // add lights
-// const light = new THREE.DirectionalLight(0xffffff, 1.0);
-
-// light.position.set(100, 100, 100);
-
-// scene.add(light);
-
-// const light2 = new THREE.DirectionalLight(0xffffff, 1.0);
-
-// light2.position.set(-100, 100, -100);
-
-// scene.add(light2);
-
-// var grid = new THREE.GridHelper(/* size */ 100,  /* divisions */ 100);
-// scene.add(grid);
-
 const material = new THREE.MeshPhongMaterial({
   color: 0x888888,
   wireframe: true,
 });
-
-// create a box and add it to the scene
-// const box = new THREE.Mesh(
-//        new THREE.BoxGeometry(10, 10, 10), 
-//        material);
-
-// scene.add(box);
 
 var raycaster = new THREE.Raycaster();
 
@@ -78,28 +47,35 @@ var prevMouse = new THREE.Vector2();
 
 var mouseDown = false;
 
-function onMouseDown(event) {
-    mouseDown = true;
-    prevMouse.copy(mouse);
+function pageToCamera(clientX, clientY) : THREE.Vector2 {
+    return new THREE.Vector2(
+        ((clientX / window.innerWidth) * 2 - 1) * 50,
+        (-(clientY / window.innerHeight) * 2 + 1) * -50);
 }
-function onMouseUp(event) {
-    mouseDown = false;
-}
-function onMouseMove(event) {
-    // calculate mouse position in normalized device coordinates
-    // (-1 to +1) for both components
+
+function updateMousePos(clientX, clientY) {
     prevMouse.copy(mouse);
 
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (clientY / window.innerHeight) * 2 + 1;
 
     // We don't need to do any fancy projection math
     // since the camera is orthographic and facing perpendicularly down
     // instead, we just need to remap it to the frustum
     mouse.x = mouse.x * 50;
     mouse.y = -mouse.y * 50;
+}
 
-    // console.log("prevmouse", prevMouse, "mouse", mouse);
+function onMouseDown(event) {
+    mouseDown = true;
+    updateMousePos(event.clientX, event.clientY);
+}
+function onMouseUp(event) {
+    mouseDown = false;
+    updateMousePos(event.clientX, event.clientY);
+}
+function onMouseMove(event) {
+    updateMousePos(event.clientX, event.clientY);
 
     if (mouseDown) {
         // console.log("mouse drag");
@@ -109,55 +85,23 @@ function onMouseMove(event) {
         var prevCellCoord = worldToCellCoords(mouse);
         var cellCoord = worldToCellCoords(prevMouse);
 
-        // console.log("b", prevCellCoord, cellCoord);
-
-        // console.log(force);
-
-        var dx = Math.abs(cellCoord.x - prevCellCoord.x);
-        var dy = Math.abs(cellCoord.y - prevCellCoord.y);
-        var sx;
-        var sy;
-        if (prevCellCoord.x < cellCoord.x)
-            sx = 1;
-        else
-            sx = -1;
-        if (prevCellCoord.y < cellCoord.y)
-            sy = 1;
-        else
-            sy = -1;
-        var err = dx - dy;
-        var x0 = prevCellCoord.x;
-        var y0 = prevCellCoord.y;
-        var x1 = cellCoord.x;
-        var y1 = cellCoord.y;
-        var i = 0;
-        while ( (x0 != x1) || (y0 != y1)) {
-            i++;
-            if (i > 50) {
-                break;
-            }
-
+        var callback = function(x: number, y: number) {
             var cellI = 
-                THREE.MathUtils.clamp(x0, 
+                THREE.MathUtils.clamp(x, 
                     /* min */ 0, 
                     /* max */ waveSolver.GetCellCountX() - 1);
             var cellJ = 
-                THREE.MathUtils.clamp(y0,
+                THREE.MathUtils.clamp(y,
                     /* min */ 0, 
                     /* max */ waveSolver.GetCellCountY() - 1);
             
             waveSolver.AddVelocity(force, cellI, cellJ);
-
-            var e2 = 2 * err;
-            if (e2 > -dy) {
-              err -= dy;
-              x0 = x0 + sx;
-            }
-            if (e2 < dx) {
-              err = err + dx;
-              y0 = y0 + sy;
-            }
         }
+
+        bresenham(
+            prevCellCoord.x, prevCellCoord.y,
+            cellCoord.x, cellCoord.y,
+            callback);
     }
 }
 
@@ -210,23 +154,6 @@ function onMouseClick(event) {
     waveSolver.AddVelocity(250000, cellI, cellJ);
 }
 
-
-
-// for ( var i = 0; i < size; i ++ ) {
-
-//     var stride = i * 3;
-
-//     data[ stride ] = r;
-//     data[ stride + 1 ] = g;
-//     data[ stride + 2 ] = b;
-
-//     g += 1;
-
-// }
-
-// used the buffer to create a DataTexture
-
-// var texture = new THREE.DataTexture( data, width, height, THREE.RGBFormat );
 
 function hsvToHsl(h, s, v) {
     // both hsv and hsl values are in [0, 1]
@@ -431,25 +358,89 @@ function onTouchStart(event): void {
     console.log("touch start");
     event.preventDefault();
     const e = {
-        clientX: event.touches[0].pageX,
-        clientY: event.touches[0].pageY
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY
     }
     // onMouseClick(e);
-    onMouseDown(e);
+    // onMouseDown(e);
 }
-function onTouchMove(event): void {
-    console.log("touch move");
-    // xxx: what does this do?
-    event.preventDefault();
-    const e = {
-        clientX: event.touches[0].pageX,
-        clientY: event.touches[0].pageY
-    }
-    onMouseMove(e);
-}
-// function onTouchEnd(event): void {
 
-// }
+function onTouchMove(event): void {
+    // console.log("touch move");
+    // // xxx: what does this do?
+    // event.preventDefault();
+    // const e = {
+    //     clientX: event.touches[0].clientX,
+    //     clientY: event.touches[0].clientY
+    // }
+
+    for (let touch of event.touches) {
+        var screenPosition = pageToCamera(touch.clientX, touch.clientY);
+
+        if (identifierToTouch.has(touch.identifier)) {
+            identifierToTouch.get(touch.identifier).SetPos(screenPosition.x, screenPosition.y);
+        }
+        else {
+            identifierToTouch.set(touch.identifier, new TouchTracker(screenPosition.x, screenPosition.y));
+        }
+    }
+
+    for (let touchTracker of identifierToTouch.values()) {
+
+        var force = 10000;
+
+        var prevCellCoord = 
+            worldToCellCoords(new THREE.Vector2(touchTracker.GetPrevPosX(), touchTracker.GetPrevPosY()));
+
+        var cellCoord =
+            worldToCellCoords(new THREE.Vector2(touchTracker.GetPosX(), touchTracker.GetPosY()));
+            
+        console.log(touchTracker, prevCellCoord, cellCoord);
+
+        var callback = function(x: number, y: number) {
+            var cellI = 
+                THREE.MathUtils.clamp(x, 
+                    /* min */ 0, 
+                    /* max */ waveSolver.GetCellCountX() - 1);
+            var cellJ = 
+                THREE.MathUtils.clamp(y,
+                    /* min */ 0, 
+                    /* max */ waveSolver.GetCellCountY() - 1);
+            
+            waveSolver.AddVelocity(force, cellI, cellJ);
+        }
+
+        bresenham(
+            prevCellCoord.x, prevCellCoord.y,
+            cellCoord.x, cellCoord.y,
+            callback);
+    }
+
+    console.log("touch tracker count", Array.from(identifierToTouch.keys()).length);
+
+    // onMouseMove(e);
+}
+function onTouchEnd(event): void {
+    // Remove any touches that no longer exist
+    var identifiersToRemove = new Set();
+
+    // Populate identifiersToRemove with all the touches we have first
+    for (let identifier of identifierToTouch.keys()) {
+        identifiersToRemove.add(identifier);
+    }
+
+    // Remove any identifiers from the list that are still around
+    for (let touch of event.touches) {
+        identifiersToRemove.delete(touch.identifier);
+    }
+
+    // Now remove the remaining touches from the master map
+    for (let identifier of identifiersToRemove.keys()) {
+        if (identifierToTouch.has(identifier)) {
+            identifierToTouch.delete(identifier);
+        }
+    }
+}
 // function onTouchLeave(event): void {
 
 // }
@@ -457,8 +448,8 @@ function onTouchMove(event): void {
 
 window.addEventListener( 'touchmove', onTouchMove, false );
 window.addEventListener( 'touchstart', onTouchStart, false );
-window.addEventListener( 'touchend', onMouseUp, false );
-window.addEventListener( 'touchleave', onMouseUp, false );
+window.addEventListener( 'touchend', onTouchEnd, false );
+// window.addEventListener( 'touchleave', onTouchLeave, false );
 
 window.addEventListener( 'mousemove', onMouseMove, false );
 window.addEventListener( 'mousedown', onMouseDown, false );

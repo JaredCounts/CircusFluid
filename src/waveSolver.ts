@@ -61,7 +61,7 @@ export class WaveSolver {
         }
     }
 
-    AddVelocity(amount: number, i: number, j: number) {
+    AddVelocity(amount: number, i: number, j: number) : void {
         this.velocity[Math.floor(i)][Math.floor(j)] += amount;
     }
 
