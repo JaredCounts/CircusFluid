@@ -115,19 +115,7 @@ export class View {
         this._Update();
         this.renderer.render(this.scene, this.camera);
     }
-
-    GetScene() : THREE.Scene {
-        return this.scene;
-    }
-
-    GetCamera() : THREE.Camera {
-        return this.camera;
-    }
-
-    GetRenderer() : THREE.WebGLRenderer {
-        return this.renderer;
-    }
-
+    
     GetDomElement() {
         return this.renderer.domElement;
     }
