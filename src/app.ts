@@ -29,6 +29,10 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 
 function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
+
+    var cellCountX = Math.floor(window.innerWidth / cellWidth);
+    var cellCountY = Math.floor(window.innerHeight / cellWidth);
+    waveSolver = new WaveSolver(cellCountX, cellCountY);
 }
 
 // add canvas to dom
@@ -317,8 +321,11 @@ function GetWaveTexture(waveSolver) : void {
     // return texture;
 }
 
+var cellWidth = 5;
+var cellCountX = Math.floor(window.innerWidth / cellWidth);
+var cellCountY = Math.floor(window.innerHeight / cellWidth);
 
-var waveSolver = new WaveSolver(2*128,2*128);
+var waveSolver = new WaveSolver(cellCountX, cellCountY);
 
 // // console.log(ws.getCellSize());
 // waveSolver.Solve(0.1);
