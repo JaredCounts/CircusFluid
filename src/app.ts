@@ -4,8 +4,11 @@ import './style.css';
 import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
-import { TouchTracker } from './touchTracker'
+import { TouchPos } from './touchPos'
 import { bresenham } from './bresenham'
+
+// Basic THREE.js setup
+// ====================
 
 // create the scene
 const scene = new THREE.Scene();
@@ -17,13 +20,12 @@ const camera = new THREE.OrthographicCamera(
     /* near */ 0.1, 
     /* far */ 7000);
 
+// Renderer setup
 const renderer = new THREE.WebGLRenderer();
-
-var identifierToTouch = new Map();
-
-// set size
 renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
+// Update the renderer and wave solver when the window resizes.
 function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -32,19 +34,12 @@ function onWindowResize() {
     waveSolver = new WaveSolver(cellCountX, cellCountY);
 }
 
-// add canvas to dom
-document.body.appendChild(renderer.domElement);
 
-const material = new THREE.MeshPhongMaterial({
-  color: 0x888888,
-  wireframe: true,
-});
-
-var raycaster = new THREE.Raycaster();
+// Mouse handling
+// ==============
 
 var mouse = new THREE.Vector2();
 var prevMouse = new THREE.Vector2();
-
 var mouseDown = false;
 
 function pageToCamera(clientX, clientY) : THREE.Vector2 {
@@ -55,15 +50,7 @@ function pageToCamera(clientX, clientY) : THREE.Vector2 {
 
 function updateMousePos(clientX, clientY) {
     prevMouse.copy(mouse);
-
-    mouse.x = (clientX / window.innerWidth) * 2 - 1;
-    mouse.y = - (clientY / window.innerHeight) * 2 + 1;
-
-    // We don't need to do any fancy projection math
-    // since the camera is orthographic and facing perpendicularly down
-    // instead, we just need to remap it to the frustum
-    mouse.x = mouse.x * 50;
-    mouse.y = -mouse.y * 50;
+    mouse = pageToCamera(clientX, clientY);
 }
 
 function onMouseDown(event) {
@@ -78,8 +65,6 @@ function onMouseMove(event) {
     updateMousePos(event.clientX, event.clientY);
 
     if (mouseDown) {
-        // console.log("mouse drag");
-        // var force = prevMouse.distanceTo(mouse) * 255;
         var force = 10000;
 
         var prevCellCoord = worldToCellCoords(mouse);
@@ -111,10 +96,6 @@ function worldToCellCoords(vec) : THREE.Vector2 {
     
     result.addVectors(vec, new THREE.Vector2(50,50));
     result.divideScalar(100.0);
-    
-    // result.x = Math.floor(result.x);
-    // result.y = Math.floor(result.y);
-    // console.log(result);
 
     result.x = 
         THREE.MathUtils.clamp(Math.floor(result.x * (waveSolver.GetCellCountX()-1)), 
@@ -130,12 +111,6 @@ function worldToCellCoords(vec) : THREE.Vector2 {
 
 
 function onMouseClick(event) {
-    console.log("click");
-    // remap mouse from [-50,50] to [0,1]
-    // var mouseXRel = mouse.x - -50;
-    // var mouseYRel = mouse.y - -50;
-
-    // console.log("click",mouse.x, mouse.y);
 
     var mouseXNorm = (mouse.x + 50)/100;
     var mouseYNorm = (mouse.y + 50)/100;
@@ -148,8 +123,6 @@ function onMouseClick(event) {
         THREE.MathUtils.clamp(Math.floor(mouseYNorm * (waveSolver.GetCellCountY()-1)),
             /* min */ 0, 
             /* max */ waveSolver.GetCellCountY() - 1);
-
-    // console.log('click at ' + cellI + ' ' + cellJ);
 
     waveSolver.AddVelocity(250000, cellI, cellJ);
 }
@@ -202,10 +175,6 @@ function GetWaveTexture(waveSolver) : void {
 
             var density = waveSolver.GetDensity(cellI, cellJ);
             var velocity = waveSolver.GetVelocity(cellI, cellJ);
-            // if (i == 0 && j == 0) {
-            //     console.log(density);
-            // }
-
             var color = new THREE.Color(); // 127 + 127 * Math.sin(velocity * 0.0004)
 
             var hsl = hsvToHsl(
@@ -214,17 +183,6 @@ function GetWaveTexture(waveSolver) : void {
                 0.5 + 0.5 * Math.sin(velocity*0.01));
 
             color.setHSL(hsl[0], hsl[1], hsl[2]);
-
-            // if (pixel.distanceTo(mouse) < 0.1) {
-            //     r = density;
-            //     g = density;
-            //     b = density;
-            // }
-            // else {
-            //     r = 0;
-            //     g = 0;
-            //     b = 0;
-            // }
 
             var stride = index * 3;
             textureData[ stride ]     = Math.floor(color.r * 255);
@@ -236,8 +194,6 @@ function GetWaveTexture(waveSolver) : void {
     textureClock.stop();
 
     textureTimes.push(textureClock.getElapsedTime());
-
-    // return texture;
 }
 
 var cellWidth = 5;
@@ -347,33 +303,23 @@ function render(): void {
     GetWaveTexture(waveSolver);
     material2.map.needsUpdate = true;
 
-    // box.position.x = mouse.x;
-    // box.position.y = mouse.y;
-    // box.position.z = 0;
 
     renderer.render(scene, camera);
 }
 
+
+var identifierToTouch = new Map();
+
 function onTouchStart(event): void {
-    console.log("touch start");
     event.preventDefault();
     const e = {
         clientX: event.touches[0].clientX,
         clientY: event.touches[0].clientY
     }
-    // onMouseClick(e);
-    // onMouseDown(e);
 }
 
 function onTouchMove(event): void {
-    // console.log("touch move");
-    // // xxx: what does this do?
-    // event.preventDefault();
-    // const e = {
-    //     clientX: event.touches[0].clientX,
-    //     clientY: event.touches[0].clientY
-    // }
-
+    event.preventDefault();
     for (let touch of event.touches) {
         var screenPosition = pageToCamera(touch.clientX, touch.clientY);
 
@@ -381,21 +327,18 @@ function onTouchMove(event): void {
             identifierToTouch.get(touch.identifier).SetPos(screenPosition.x, screenPosition.y);
         }
         else {
-            identifierToTouch.set(touch.identifier, new TouchTracker(screenPosition.x, screenPosition.y));
+            identifierToTouch.set(touch.identifier, new TouchPos(screenPosition.x, screenPosition.y));
         }
     }
 
-    for (let touchTracker of identifierToTouch.values()) {
-
-        var force = 10000;
+    var force = 10000;
+    for (let TouchPos of identifierToTouch.values()) {
 
         var prevCellCoord = 
-            worldToCellCoords(new THREE.Vector2(touchTracker.GetPrevPosX(), touchTracker.GetPrevPosY()));
+            worldToCellCoords(new THREE.Vector2(TouchPos.GetPrevPosX(), TouchPos.GetPrevPosY()));
 
         var cellCoord =
-            worldToCellCoords(new THREE.Vector2(touchTracker.GetPosX(), touchTracker.GetPosY()));
-            
-        console.log(touchTracker, prevCellCoord, cellCoord);
+            worldToCellCoords(new THREE.Vector2(TouchPos.GetPosX(), TouchPos.GetPosY()));
 
         var callback = function(x: number, y: number) {
             var cellI = 
@@ -415,13 +358,16 @@ function onTouchMove(event): void {
             cellCoord.x, cellCoord.y,
             callback);
     }
-
-    console.log("touch tracker count", Array.from(identifierToTouch.keys()).length);
-
-    // onMouseMove(e);
 }
+
 function onTouchEnd(event): void {
-    // Remove any touches that no longer exist
+    // On touch end events, remove any identifier from the identifierToTouch map
+    // (so it doesn't grow indefinitely).
+    // This is kind of a roundabout way of doing it. First we create a set,
+    // populate it with every touch identifier we know about, then remove from that
+    // every identifier that's still around, and then we remove whatever is remaining
+    // from the map.
+
     var identifiersToRemove = new Set();
 
     // Populate identifiersToRemove with all the touches we have first
@@ -441,22 +387,17 @@ function onTouchEnd(event): void {
         }
     }
 }
-// function onTouchLeave(event): void {
-
-// }
 
 
 window.addEventListener( 'touchmove', onTouchMove, false );
 window.addEventListener( 'touchstart', onTouchStart, false );
 window.addEventListener( 'touchend', onTouchEnd, false );
-// window.addEventListener( 'touchleave', onTouchLeave, false );
+window.addEventListener( 'touchleave', onTouchEnd, false );
 
 window.addEventListener( 'mousemove', onMouseMove, false );
 window.addEventListener( 'mousedown', onMouseDown, false );
 window.addEventListener( 'mouseup', onMouseUp, false );
 window.addEventListener( 'resize', onWindowResize, false );
-
-
 
 
 renderer.domElement.addEventListener("click", onMouseClick, true);

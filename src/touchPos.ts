@@ -1,4 +1,8 @@
-export class TouchTracker {
+/**
+ * Standard JS touch events don't provide a previous position for each given touch.
+ * This class is used for that.
+ */
+export class TouchPos {
 
     private posX: number;
     private posY: number;
