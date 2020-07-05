@@ -1,7 +1,5 @@
 // add styles
 import './style.css';
-// three.js
-import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
 import { View } from './view'
