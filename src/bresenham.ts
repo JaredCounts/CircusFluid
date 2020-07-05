@@ -1,7 +1,7 @@
 
 type bresenhamCallbackType = (x: number, y: number) => void;
 
-export function bresenham(
+export function Bresenham(
     startX : number, startY : number, 
     endX : number, endY : number,
     callback : bresenhamCallbackType) : void 

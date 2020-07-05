@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
 import { TouchPos } from './touchPos'
-import { bresenham } from './bresenham'
+import { Bresenham } from './bresenham'
 
 /**
  * Handle user interactions.
@@ -18,7 +18,7 @@ export class Controller {
     private prevMousePos : THREE.Vector2;
     private mouseDown : boolean;
 
-    constructor(waveSolver : WaveSolver) {
+    constructor(window, waveSolver : WaveSolver) {
         this.waveSolver = waveSolver;
 
         this.identifierToTouchPos = new Map<any, TouchPos>();
@@ -26,6 +26,8 @@ export class Controller {
         this.mousePos = new THREE.Vector2();
         this.prevMousePos = new THREE.Vector2();
         this.mouseDown = false;
+
+        this._RegisterForEvents(window)
     }
 
     HandleTouchStart(event) : void {
@@ -85,7 +87,7 @@ export class Controller {
                 this._ScreenToCellCoords(
                     new THREE.Vector2(TouchPos.GetPosX(), TouchPos.GetPosY()));
 
-            bresenham(
+            Bresenham(
                 prevCellCoord.x, prevCellCoord.y,
                 cellCoord.x, cellCoord.y,
                 this._ClampedAddVelocity.bind(this, force));
@@ -141,7 +143,7 @@ export class Controller {
             let prevCellCoord = this._ScreenToCellCoords(this.mousePos);
             let cellCoord = this._ScreenToCellCoords(this.prevMousePos);
 
-            bresenham(
+            Bresenham(
                 prevCellCoord.x, prevCellCoord.y,
                 cellCoord.x, cellCoord.y,
                 this._ClampedAddVelocity.bind(this, force));
@@ -154,6 +156,22 @@ export class Controller {
         let force = 250000;
         let cellCoord = this._ScreenToCellCoords(this.mousePos);
         this.waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
+    }
+
+    /**
+     * Given the window, this adds the controller's handlers to their
+     * respective events.
+     */
+    private _RegisterForEvents(window) : void {
+        window.addEventListener('touchmove', this.HandleTouchMove.bind(this));
+        window.addEventListener('touchstart', this.HandleTouchStart.bind(this));
+        window.addEventListener('touchend', this.HandleTouchEnd.bind(this));
+        window.addEventListener('touchleave', this.HandleTouchEnd.bind(this));
+
+        window.addEventListener('mousemove', this.HandleMouseMove.bind(this));
+        window.addEventListener('mousedown', this.HandleMouseDown.bind(this));
+        window.addEventListener('mouseup', this.HandleMouseUp.bind(this));
+        window.addEventListener('click', this.HandleMouseClick.bind(this));
     }
 
     /**

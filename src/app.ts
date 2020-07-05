@@ -27,8 +27,8 @@ const timestepManager = new TimeManager(
 /**
  * The main update loop of the app.
  */
-function animate() : void {
-    requestAnimationFrame(animate);
+function Animate() : void {
+    requestAnimationFrame(Animate);
 
     timestepManager.Update(
         waveSolver.Solve.bind(waveSolver));
@@ -36,32 +36,20 @@ function animate() : void {
     view.Render();
 }
 
-function registerControllerHandlers() {
-    window.addEventListener('touchmove', controller.HandleTouchMove.bind(controller));
-    window.addEventListener('touchstart', controller.HandleTouchStart.bind(controller));
-    window.addEventListener('touchend', controller.HandleTouchEnd.bind(controller));
-    window.addEventListener('touchleave', controller.HandleTouchEnd.bind(controller));
-
-    window.addEventListener('mousemove', controller.HandleMouseMove.bind(controller));
-    window.addEventListener('mousedown', controller.HandleMouseDown.bind(controller));
-    window.addEventListener('mouseup', controller.HandleMouseUp.bind(controller));
-    window.addEventListener('click', controller.HandleMouseClick.bind(controller));
-}
-
 // Setup the controller and its handlers
-let controller = new Controller(waveSolver);
-registerControllerHandlers();
+let controller = new Controller(window, waveSolver);
 
 // When window resizes, reset everything.
-function onWindowResize() {
+function OnWindowResize() {
     waveSolver = new WaveSolver(cellCountX, cellCountY);
-    controller = new Controller(waveSolver);
-    registerControllerHandlers();
+    controller = new Controller(window, waveSolver);
 
+    // When updating the view, we need to be sure to replace the old dom element 
+    // instead of just adding a new one.
     let oldDomElement = view.GetDomElement();
     view = new View(window, waveSolver);
     document.body.replaceChild(view.GetDomElement(), oldDomElement);
 }
-window.addEventListener('resize', onWindowResize);
+window.addEventListener('resize', OnWindowResize);
 
-animate();
+Animate();
