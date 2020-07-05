@@ -4,12 +4,15 @@ import { WaveSolver } from './waveSolver'
 import { TouchPos } from './touchPos'
 import { bresenham } from './bresenham'
 
-import * as Util from './util'
-
+/**
+ * Handle user interactions.
+ */
 export class Controller {
+    private readonly waveSolver : WaveSolver;
     
-    private waveSolver : WaveSolver;
-    private identifierToTouch: Map<any, TouchPos>;
+    // Keep a map of touch identifiers to "TouchPos"es. We need this just so we 
+    // can keep track of the "previous" positions of each touch.
+    private readonly identifierToTouchPos: Map<any, TouchPos>;
 
     private mousePos : THREE.Vector2;
     private prevMousePos : THREE.Vector2;
@@ -18,7 +21,7 @@ export class Controller {
     constructor(waveSolver : WaveSolver) {
         this.waveSolver = waveSolver;
 
-        this.identifierToTouch = new Map<any, TouchPos>();
+        this.identifierToTouchPos = new Map<any, TouchPos>();
 
         this.mousePos = new THREE.Vector2();
         this.prevMousePos = new THREE.Vector2();
@@ -26,50 +29,60 @@ export class Controller {
     }
 
     HandleTouchStart(event) : void {
-        // Find new touches
-        var force = 250000;
+        // Find new touches and add a little force at that spot.
 
-        var knownIdentifiers = new Set();
+        let force = 250000;
 
-        // Populate identifiersToRemove with all the touches we have first
-        for (let identifier of this.identifierToTouch.keys()) {
+        let knownIdentifiers = new Set();
+
+        // Populate knownIdentifiers with all the touches we have first
+        for (let identifier of this.identifierToTouchPos.keys()) {
             knownIdentifiers.add(identifier);
         }
 
-        // Remove any identifiers from the list that are still around
+        // For any new identifier, add some velocity at that spot.
         for (let touch of event.touches) {
             if (!knownIdentifiers.has(touch.identifier)) {
-                var screenPosition = Util.pageToCamera(touch.clientX, touch.clientY);
-                var cellCoord = 
-                    Util.worldToCellCoords(this.waveSolver, screenPosition);
+                let screenPosition = 
+                    this._PageToScreen(touch.pageX, touch.pageY);
+                
+                let cellCoord = this._ScreenToCellCoords(screenPosition);
+                
                 this.waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
             }
         }
     }
+
     HandleTouchMove(event) : void {
         event.preventDefault();
+        
+        // Update our mappings and their positions given the event positions.
         for (let touch of event.touches) {
-            var screenPosition = Util.pageToCamera(touch.clientX, touch.clientY);
+            let screenPosition = this._PageToScreen(touch.pageX, touch.pageY);
 
-            if (this.identifierToTouch.has(touch.identifier)) {
-                this.identifierToTouch.get(touch.identifier).SetPos(screenPosition.x, screenPosition.y);
+            if (this.identifierToTouchPos.has(touch.identifier)) {
+                this.identifierToTouchPos.get(touch.identifier).SetPos(
+                    screenPosition.x, screenPosition.y);
             }
             else {
-                this.identifierToTouch.set(touch.identifier, new TouchPos(screenPosition.x, screenPosition.y));
+                this.identifierToTouchPos.set(
+                    touch.identifier, 
+                    new TouchPos(screenPosition.x, screenPosition.y));
             }
         }
 
-        var force = 10000;
-        for (let TouchPos of this.identifierToTouch.values()) {
+        // Apply force along the segment between each touch's prior and current
+        // positions.
+        let force = 10000;
+        for (let TouchPos of this.identifierToTouchPos.values()) {
 
-            var prevCellCoord = 
-                Util.worldToCellCoords(
-                    this.waveSolver, 
-                    new THREE.Vector2(TouchPos.GetPrevPosX(), TouchPos.GetPrevPosY()));
+            let prevCellCoord = 
+                this._ScreenToCellCoords(
+                    new THREE.Vector2(
+                        TouchPos.GetPrevPosX(), TouchPos.GetPrevPosY()));
 
-            var cellCoord =
-                Util.worldToCellCoords(
-                    this.waveSolver, 
+            let cellCoord =
+                this._ScreenToCellCoords(
                     new THREE.Vector2(TouchPos.GetPosX(), TouchPos.GetPosY()));
 
             bresenham(
@@ -80,17 +93,17 @@ export class Controller {
     }
 
     HandleTouchEnd(event) : void {
-        // On touch end events, remove any identifier from the identifierToTouch map
-        // (so it doesn't grow indefinitely).
+        // On touch end events, remove any identifier from the identifierToTouchPos 
+        // map so it doesn't grow indefinitely.
         // This is kind of a roundabout way of doing it. First we create a set,
-        // populate it with every touch identifier we know about, then remove from that
-        // every identifier that's still around, and then we remove whatever is remaining
-        // from the map.
+        // populate it with every touch identifier we know about, then remove 
+        // from that every identifier that's still around, and then we remove 
+        // whatever is remaining from the map.
 
-        var identifiersToRemove = new Set();
+        let identifiersToRemove = new Set();
 
         // Populate identifiersToRemove with all the touches we have first
-        for (let identifier of this.identifierToTouch.keys()) {
+        for (let identifier of this.identifierToTouchPos.keys()) {
             identifiersToRemove.add(identifier);
         }
 
@@ -101,32 +114,32 @@ export class Controller {
 
         // Now remove the remaining touches from the master map
         for (let identifier of identifiersToRemove.keys()) {
-            if (this.identifierToTouch.has(identifier)) {
-                this.identifierToTouch.delete(identifier);
+            if (this.identifierToTouchPos.has(identifier)) {
+                this.identifierToTouchPos.delete(identifier);
             }
         }
     }
 
     HandleMouseDown(event) : void {
         this.mouseDown = true;
-        this._UpdateMousePos(Util.pageToCamera(event.clientX, event.clientY));
+        this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
     }
 
     HandleMouseUp(event) : void {
         this.mouseDown = false;
-        this._UpdateMousePos(Util.pageToCamera(event.clientX, event.clientY));
+        this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
     }
 
     HandleMouseMove(event) : void {
-        this._UpdateMousePos(Util.pageToCamera(event.clientX, event.clientY));
+        this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
 
+        // If the mouse is down, add some force along the segment between
+        // the previous and current mouse positions.
         if (this.mouseDown) {
-            var force = 10000;
+            let force = 10000;
 
-            var prevCellCoord = 
-                Util.worldToCellCoords(this.waveSolver, this.mousePos);
-            var cellCoord = 
-                Util.worldToCellCoords(this.waveSolver, this.prevMousePos);
+            let prevCellCoord = this._ScreenToCellCoords(this.mousePos);
+            let cellCoord = this._ScreenToCellCoords(this.prevMousePos);
 
             bresenham(
                 prevCellCoord.x, prevCellCoord.y,
@@ -136,20 +149,23 @@ export class Controller {
     }
 
     HandleMouseClick(event) : void {
-        this._UpdateMousePos(Util.pageToCamera(event.clientX, event.clientY));
+        this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
 
-        var force = 250000;
-        var cellCoord = 
-            Util.worldToCellCoords(this.waveSolver, this.mousePos);
+        let force = 250000;
+        let cellCoord = this._ScreenToCellCoords(this.mousePos);
         this.waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
     }
 
+    /**
+     * Given a force, adds that amount to the velocity at the x y coordinates
+     * given. This first clamps the x and y coords.
+     */
     private _ClampedAddVelocity(force: number, x: number, y: number) : void {
-        var cellI = 
+        let cellI = 
             THREE.MathUtils.clamp(x, 
                 /* min */ 0, 
                 /* max */ this.waveSolver.GetCellCountX() - 1);
-        var cellJ = 
+        let cellJ = 
             THREE.MathUtils.clamp(y,
                 /* min */ 0, 
                 /* max */ this.waveSolver.GetCellCountY() - 1);
@@ -160,5 +176,37 @@ export class Controller {
     private _UpdateMousePos(pos : THREE.Vector2) : void {
         this.prevMousePos.copy(this.mousePos);
         this.mousePos = pos;
+    }
+
+    /** 
+     * Convert coordinates from page space to screen space.
+     */
+    private _PageToScreen(pageX, pageY) : THREE.Vector2 {
+        return new THREE.Vector2(
+            ((pageX / window.innerWidth) * 2 - 1) * 50,
+            (-(pageY / window.innerHeight) * 2 + 1) * -50);
+    }
+
+    /** 
+     * Convert coordinates from screen space to wave solver integer coordinates.
+     */
+    private _ScreenToCellCoords(vec) : THREE.Vector2 {
+        let result = new THREE.Vector2();
+        
+        result.addVectors(vec, new THREE.Vector2(50,50));
+        result.divideScalar(100.0);
+
+        result.x = 
+            THREE.MathUtils.clamp(
+                Math.floor(result.x * (this.waveSolver.GetCellCountX()-1)), 
+                /* min */ 0, 
+                /* max */ this.waveSolver.GetCellCountX() - 1);
+        result.y = 
+            THREE.MathUtils.clamp(
+                Math.floor(result.y * (this.waveSolver.GetCellCountY()-1)),
+                /* min */ 0, 
+                /* max */ this.waveSolver.GetCellCountY() - 1);
+
+        return result;
     }
 }

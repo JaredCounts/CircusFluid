@@ -1,23 +1,25 @@
 import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
-import * as Util from './util'
 
+/**
+ * The "view" of our application. Given the wave solver, this will render to
+ * match the wave solver's current state.
+ */
 export class View {
     private readonly scene : THREE.Scene;
     private readonly renderer : THREE.WebGLRenderer;
     private readonly camera : THREE.Camera;
 
-    private readonly texture : THREE.DataTexture;
     private readonly material : THREE.MeshBasicMaterial;
-    private textureData : Uint8Array;
     
     private readonly waveSolver : WaveSolver;
 
     private readonly textureWidth : number;
     private readonly textureHeight : number;
-    // Reference to the current window
-    // private readonly window;
+    
+    // Pixel data for the on screen texture.
+    private textureData : Uint8Array;
 
     constructor(window, waveSolver : WaveSolver) {
         this.waveSolver = waveSolver;
@@ -26,6 +28,8 @@ export class View {
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         
+        // I somewhat arbitrarily chose a screen that goes [-50,50] along each
+        // axis.
         this.camera = new THREE.OrthographicCamera(
             /* left */ -50,
             /* right */ 50,
@@ -34,14 +38,13 @@ export class View {
             /* near */ 0.1,
             /* far */ 7000);
 
-        // this.window = window;
         this.textureWidth = this.waveSolver.GetCellCountX();
         this.textureHeight = this.waveSolver.GetCellCountY();
 
         let textureSize = this.textureWidth * this.textureHeight;
         this.textureData = new Uint8Array(3 * textureSize);
 
-        this.texture = new THREE.DataTexture(
+        let texture = new THREE.DataTexture(
             this.textureData, 
             this.textureWidth, 
             this.textureHeight, 
@@ -49,20 +52,33 @@ export class View {
 
         this.material = new THREE.MeshBasicMaterial({
             side: THREE.DoubleSide, 
-            map: this.texture
+            map: texture
         });
 
-        this.material.map = this.texture;
-
+        // Size the geometry to match the arbitrary screen coordinates I chose
+        // above.
         let geometry = new THREE.PlaneGeometry(100, 100);
         let plane = new THREE.Mesh(geometry, this.material);
         this.scene.add( plane );
 
         this.camera.position.x = 0;
         this.camera.position.y = 0;
+        // The camera is orthographic, so things don't scale with distance. 
+        // That means the z-coordinate we choose here doesn't matter, as long as
+        // it's positive.
         this.camera.position.z = 100;
+    }
 
-        this.camera.lookAt(this.scene.position);
+    /**
+     * Update the scene to match the current wave solver and render.
+     */
+    Render() : void {
+        this._Update();
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    GetDomElement() {
+        return this.renderer.domElement;
     }
 
     private _Update() : void {
@@ -92,7 +108,7 @@ export class View {
                 let velocity = this.waveSolver.GetVelocity(cellI, cellJ);
 
                 // Compute the color from HSV space
-                let hsl = Util.hsvToHsl(
+                let hsl = this._HsvToHsl(
                     0.5 + 0.5 * Math.sin(density*0.0004), 
                     1.0, 
                     0.5 + 0.5 * Math.sin(velocity*0.01));
@@ -111,12 +127,25 @@ export class View {
         this.material.map.needsUpdate = true;
     }
 
-    Render() : void {
-        this._Update();
-        this.renderer.render(this.scene, this.camera);
+    /**
+     * Convert hue/saturation/variance to hue/saturation/luminance.
+     * Borrowed from https://stackoverflow.com/a/31851617/456460
+     */
+    private _HsvToHsl(h, s, v) {
+        // both hsv and hsl values are in [0, 1]
+        let l = (2 - s) * v / 2;
+
+        if (l != 0) {
+            if (l == 1) {
+                s = 0
+            } else if (l < 0.5) {
+                s = s * v / (l * 2)
+            } else {
+                s = s * v / (2 - l * 2)
+            }
+        }
+
+        return [h, s, l]
     }
-    
-    GetDomElement() {
-        return this.renderer.domElement;
-    }
+
 }

@@ -8,37 +8,28 @@ import { View } from './view'
 import { Controller } from './controller'
 import { TimeManager } from './timeManager'
 
-// When window resizes, reset everything.
-function onWindowResize() {
-
-    waveSolver = new WaveSolver(cellCountX, cellCountY);
-    controller = new Controller(waveSolver);
-    registerControllerHandlers();
-
-    let oldDomElement = view.GetDomElement();
-    view = new View(window, waveSolver);
-    document.body.replaceChild(view.GetDomElement(), oldDomElement);
-}
-
-var cellWidth = 5;
+const cellWidth = 5;
 
 // To keep each cell roughly uniform, determine the number of cells can fit 
 // in the window along their respective axes.
-var cellCountX = Math.floor(window.innerWidth / cellWidth);
-var cellCountY = Math.floor(window.innerHeight / cellWidth);
+let cellCountX = Math.floor(window.innerWidth / cellWidth);
+let cellCountY = Math.floor(window.innerHeight / cellWidth);
 
-var waveSolver = new WaveSolver(cellCountX, cellCountY);
+let waveSolver = new WaveSolver(cellCountX, cellCountY);
 
-var view = new View(window, waveSolver);
+let view = new View(window, waveSolver);
 document.body.appendChild(view.GetDomElement());
 
-var timestepManager = new TimeManager(
+const timestepManager = new TimeManager(
     /* timestep_ms */ 10.0,
     /* timestepLimitPerUpdate */ 10);
 
+/**
+ * The main update loop of the app.
+ */
 function animate() : void {
     requestAnimationFrame(animate);
-    
+
     timestepManager.Update(
         waveSolver.Solve.bind(waveSolver));
 
@@ -57,10 +48,20 @@ function registerControllerHandlers() {
     window.addEventListener('click', controller.HandleMouseClick.bind(controller));
 }
 
-var controller = new Controller(waveSolver);
+// Setup the controller and its handlers
+let controller = new Controller(waveSolver);
 registerControllerHandlers();
 
-window.addEventListener('resize', onWindowResize);
+// When window resizes, reset everything.
+function onWindowResize() {
+    waveSolver = new WaveSolver(cellCountX, cellCountY);
+    controller = new Controller(waveSolver);
+    registerControllerHandlers();
 
+    let oldDomElement = view.GetDomElement();
+    view = new View(window, waveSolver);
+    document.body.replaceChild(view.GetDomElement(), oldDomElement);
+}
+window.addEventListener('resize', onWindowResize);
 
 animate();
