@@ -2,18 +2,12 @@ export class WaveSolver {
     private velocity: number[][];
     private density: number[][];
 
-    // private oldVelocity: number[][];
-    // private oldDensity: number[][];
-
     private friction: number;
     private speed: number;
 
     constructor(cellCountX: number, cellCountY: number) {
         this.velocity = [];
         this.density = [];
-
-        // this.oldVelocity = [];
-        // this.oldDensity = [];
 
         this.friction = 0.58;
         this.speed = 20.0;
@@ -23,35 +17,18 @@ export class WaveSolver {
             this.velocity[i] = [];
             this.density[i] = [];
 
-            // this.oldVelocity[i] = [];
-            // this.oldDensity[i] = [];
-
             for (var j = 0; j < cellCountY; j++) {
                 this.velocity[i][j] = 0.0;
                 this.density[i][j] = 0.0;
-
-                // this.oldVelocity[i][j] = 0.0;
-                // this.oldDensity[i][j] = 0.0;
             }
         }
     }
 
     Solve(timeStep: number) {
-        // console.log(timeStep);
-        // console.lo
-        // this.velocity[5][5] += 1;
-        // console.log("velocity: " + this.velocity[5][5]);
-        // for (var i = 0; i < this.velocity.length; i++) {
-        //     for (var j = 0; j < this.velocity[i].length; j++) {
-        //         this.oldDensity[i][j] = this.density[i][j];
-        //         this.oldVelocity[i][j] = this.velocity[i][j];
-        //     }
-        // }
-
-        // xxx: this ended up being a bug in my old code
-        // I tried switching to the proper wave equations, but I couldn't get a result
-        // that looked as nice as I did with the old code
-        // in any case, I made it more explicit.
+        // xxx: My old code had some logic errors that ended up giving pretty
+        // neat results. Using the proper wave equations here gives something
+        // more physically accurate, but I've not been able to tune the 
+        // parameters to get them to match what I had before.
         for (var i = 0; i < this.velocity.length; i++) {
             for (var j = 0; j < this.velocity[i].length; j++) {
                 var densDiff = this._GetAdjacentSum(this.density, i, j) - 4.0 * this.density[i][j];
