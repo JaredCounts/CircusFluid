@@ -20,13 +20,16 @@ export class View {
     // Pixel data for the on screen texture.
     private _textureData : Uint8Array;
 
-    constructor(window, waveSolver : WaveSolver) {
+    constructor(parentElement, waveSolver : WaveSolver) {
         this._waveSolver = waveSolver;
 
         this._scene = new THREE.Scene();
         this._renderer = new THREE.WebGLRenderer();
-        this._renderer.setSize(window.innerWidth, window.innerHeight);
+        this._renderer.setSize(
+            parentElement.offsetWidth, parentElement.offsetHeight);
         
+        console.log("size",parentElement.offsetWidth, parentElement.offsetHeight);
+
         // I somewhat arbitrarily chose a screen that goes [-50,50] along each
         // axis.
         this._camera = new THREE.OrthographicCamera(

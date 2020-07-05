@@ -15,8 +15,28 @@ let cellCountY = Math.floor(window.innerHeight / cellWidth);
 
 let waveSolver = new WaveSolver(cellCountX, cellCountY);
 
-let view = new View(window, waveSolver);
-document.body.appendChild(view.GetDomElement());
+function ResetView() : void {
+    let appElement = document.getElementById('app');
+
+    // When updating the view, we need to be sure to replace the old dom element 
+    // instead of just adding a new one.
+    let oldDomElement = view == null ? null : view.GetDomElement();
+    view = new View(appElement, waveSolver);
+
+    if (oldDomElement == null) {
+        appElement.appendChild(view.GetDomElement());
+    }
+    else {
+        appElement.replaceChild(view.GetDomElement(), oldDomElement);
+    }
+}
+
+let view;
+
+function OnDOMContentLoaded(event) : void {
+    ResetView();
+}
+document.addEventListener('DOMContentLoaded', OnDOMContentLoaded);
 
 const timestepManager = new TimeManager(
     /* timestep_ms */ 10.0,
@@ -31,7 +51,9 @@ function Animate() : void {
     timestepManager.Update(
         waveSolver.Solve.bind(waveSolver));
 
-    view.Render();
+    if (view != null) {
+        view.Render();
+    }
 }
 
 // Setup the controller and its handlers
@@ -45,11 +67,7 @@ function OnWindowResize() {
     waveSolver = new WaveSolver(cellCountX, cellCountY);
     controller = new Controller(window, waveSolver);
 
-    // When updating the view, we need to be sure to replace the old dom element 
-    // instead of just adding a new one.
-    let oldDomElement = view.GetDomElement();
-    view = new View(window, waveSolver);
-    document.body.replaceChild(view.GetDomElement(), oldDomElement);
+    ResetView();
 }
 window.addEventListener('resize', OnWindowResize);
 
