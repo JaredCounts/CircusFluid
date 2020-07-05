@@ -4,8 +4,11 @@ import './style.css';
 import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
+import { Controller } from './controller'
 import { TouchPos } from './touchPos'
 import { bresenham } from './bresenham'
+
+import * as Util from './util'
 
 // Basic THREE.js setup
 // ====================
@@ -32,117 +35,6 @@ function onWindowResize() {
     var cellCountX = Math.floor(window.innerWidth / cellWidth);
     var cellCountY = Math.floor(window.innerHeight / cellWidth);
     waveSolver = new WaveSolver(cellCountX, cellCountY);
-}
-
-
-// Mouse handling
-// ==============
-
-var mouse = new THREE.Vector2();
-var prevMouse = new THREE.Vector2();
-var mouseDown = false;
-
-function pageToCamera(clientX, clientY) : THREE.Vector2 {
-    return new THREE.Vector2(
-        ((clientX / window.innerWidth) * 2 - 1) * 50,
-        (-(clientY / window.innerHeight) * 2 + 1) * -50);
-}
-
-function updateMousePos(clientX, clientY) {
-    prevMouse.copy(mouse);
-    mouse = pageToCamera(clientX, clientY);
-}
-
-function onMouseDown(event) {
-    mouseDown = true;
-    updateMousePos(event.clientX, event.clientY);
-}
-function onMouseUp(event) {
-    mouseDown = false;
-    updateMousePos(event.clientX, event.clientY);
-}
-function onMouseMove(event) {
-    updateMousePos(event.clientX, event.clientY);
-
-    if (mouseDown) {
-        var force = 10000;
-
-        var prevCellCoord = worldToCellCoords(mouse);
-        var cellCoord = worldToCellCoords(prevMouse);
-
-        var callback = function(x: number, y: number) {
-            var cellI = 
-                THREE.MathUtils.clamp(x, 
-                    /* min */ 0, 
-                    /* max */ waveSolver.GetCellCountX() - 1);
-            var cellJ = 
-                THREE.MathUtils.clamp(y,
-                    /* min */ 0, 
-                    /* max */ waveSolver.GetCellCountY() - 1);
-            
-            waveSolver.AddVelocity(force, cellI, cellJ);
-        }
-
-        bresenham(
-            prevCellCoord.x, prevCellCoord.y,
-            cellCoord.x, cellCoord.y,
-            callback);
-    }
-}
-
-
-function worldToCellCoords(vec) : THREE.Vector2 {
-    var result = new THREE.Vector2();
-    
-    result.addVectors(vec, new THREE.Vector2(50,50));
-    result.divideScalar(100.0);
-
-    result.x = 
-        THREE.MathUtils.clamp(Math.floor(result.x * (waveSolver.GetCellCountX()-1)), 
-            /* min */ 0, 
-            /* max */ waveSolver.GetCellCountX() - 1);
-    result.y = 
-        THREE.MathUtils.clamp(Math.floor(result.y * (waveSolver.GetCellCountY()-1)),
-            /* min */ 0, 
-            /* max */ waveSolver.GetCellCountY() - 1);
-
-    return result;
-}
-
-
-function onMouseClick(event) {
-
-    var mouseXNorm = (mouse.x + 50)/100;
-    var mouseYNorm = (mouse.y + 50)/100;
-
-    var cellI = 
-        THREE.MathUtils.clamp(Math.floor(mouseXNorm * (waveSolver.GetCellCountX()-1)), 
-            /* min */ 0, 
-            /* max */ waveSolver.GetCellCountX() - 1);
-    var cellJ = 
-        THREE.MathUtils.clamp(Math.floor(mouseYNorm * (waveSolver.GetCellCountY()-1)),
-            /* min */ 0, 
-            /* max */ waveSolver.GetCellCountY() - 1);
-
-    waveSolver.AddVelocity(250000, cellI, cellJ);
-}
-
-
-function hsvToHsl(h, s, v) {
-    // both hsv and hsl values are in [0, 1]
-    var l = (2 - s) * v / 2;
-
-    if (l != 0) {
-        if (l == 1) {
-            s = 0
-        } else if (l < 0.5) {
-            s = s * v / (l * 2)
-        } else {
-            s = s * v / (2 - l * 2)
-        }
-    }
-
-    return [h, s, l]
 }
 
 var textureClock = new THREE.Clock(false);
@@ -177,7 +69,7 @@ function GetWaveTexture(waveSolver) : void {
             var velocity = waveSolver.GetVelocity(cellI, cellJ);
             var color = new THREE.Color(); // 127 + 127 * Math.sin(velocity * 0.0004)
 
-            var hsl = hsvToHsl(
+            var hsl = Util.hsvToHsl(
                 0.5 + 0.5 * Math.sin(density*0.0004), 
                 1.0, 
                 0.5 + 0.5 * Math.sin(velocity*0.01));
@@ -307,99 +199,19 @@ function render(): void {
     renderer.render(scene, camera);
 }
 
+var controller = new Controller(waveSolver);
 
-var identifierToTouch = new Map();
+window.addEventListener( 'touchmove', controller.HandleTouchMove.bind(controller), false );
+window.addEventListener( 'touchstart', controller.HandleTouchStart.bind(controller), false );
+window.addEventListener( 'touchend', controller.HandleTouchEnd.bind(controller), false );
+window.addEventListener( 'touchleave', controller.HandleTouchEnd.bind(controller), false );
 
-function onTouchStart(event): void {
-    event.preventDefault();
-    const e = {
-        clientX: event.touches[0].clientX,
-        clientY: event.touches[0].clientY
-    }
-}
+window.addEventListener( 'mousemove', controller.HandleMouseMove.bind(controller), false );
+window.addEventListener( 'mousedown', controller.HandleMouseDown.bind(controller), false );
+window.addEventListener( 'mouseup', controller.HandleMouseUp.bind(controller), false );
+window.addEventListener( 'click', controller.HandleMouseClick.bind(controller), true);
 
-function onTouchMove(event): void {
-    event.preventDefault();
-    for (let touch of event.touches) {
-        var screenPosition = pageToCamera(touch.clientX, touch.clientY);
-
-        if (identifierToTouch.has(touch.identifier)) {
-            identifierToTouch.get(touch.identifier).SetPos(screenPosition.x, screenPosition.y);
-        }
-        else {
-            identifierToTouch.set(touch.identifier, new TouchPos(screenPosition.x, screenPosition.y));
-        }
-    }
-
-    var force = 10000;
-    for (let TouchPos of identifierToTouch.values()) {
-
-        var prevCellCoord = 
-            worldToCellCoords(new THREE.Vector2(TouchPos.GetPrevPosX(), TouchPos.GetPrevPosY()));
-
-        var cellCoord =
-            worldToCellCoords(new THREE.Vector2(TouchPos.GetPosX(), TouchPos.GetPosY()));
-
-        var callback = function(x: number, y: number) {
-            var cellI = 
-                THREE.MathUtils.clamp(x, 
-                    /* min */ 0, 
-                    /* max */ waveSolver.GetCellCountX() - 1);
-            var cellJ = 
-                THREE.MathUtils.clamp(y,
-                    /* min */ 0, 
-                    /* max */ waveSolver.GetCellCountY() - 1);
-            
-            waveSolver.AddVelocity(force, cellI, cellJ);
-        }
-
-        bresenham(
-            prevCellCoord.x, prevCellCoord.y,
-            cellCoord.x, cellCoord.y,
-            callback);
-    }
-}
-
-function onTouchEnd(event): void {
-    // On touch end events, remove any identifier from the identifierToTouch map
-    // (so it doesn't grow indefinitely).
-    // This is kind of a roundabout way of doing it. First we create a set,
-    // populate it with every touch identifier we know about, then remove from that
-    // every identifier that's still around, and then we remove whatever is remaining
-    // from the map.
-
-    var identifiersToRemove = new Set();
-
-    // Populate identifiersToRemove with all the touches we have first
-    for (let identifier of identifierToTouch.keys()) {
-        identifiersToRemove.add(identifier);
-    }
-
-    // Remove any identifiers from the list that are still around
-    for (let touch of event.touches) {
-        identifiersToRemove.delete(touch.identifier);
-    }
-
-    // Now remove the remaining touches from the master map
-    for (let identifier of identifiersToRemove.keys()) {
-        if (identifierToTouch.has(identifier)) {
-            identifierToTouch.delete(identifier);
-        }
-    }
-}
-
-
-window.addEventListener( 'touchmove', onTouchMove, false );
-window.addEventListener( 'touchstart', onTouchStart, false );
-window.addEventListener( 'touchend', onTouchEnd, false );
-window.addEventListener( 'touchleave', onTouchEnd, false );
-
-window.addEventListener( 'mousemove', onMouseMove, false );
-window.addEventListener( 'mousedown', onMouseDown, false );
-window.addEventListener( 'mouseup', onMouseUp, false );
 window.addEventListener( 'resize', onWindowResize, false );
 
-
-renderer.domElement.addEventListener("click", onMouseClick, true);
 
 animate();
