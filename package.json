@@ -1,5 +1,5 @@
 {
-  "name": "circus",
+  "name": "Circus",
   "version": "1.0.0",
   "description": "three.js + typescript",
   "main": "app.js",
@@ -7,6 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack-dev-server --inline --open --save-dev",
     "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
   },
   "keywords": [],
   "author": "Jared Counts",

@@ -6,7 +6,7 @@ import { View } from './view'
 import { Controller } from './controller'
 import { TimeManager } from './timeManager'
 
-const cellWidth = 5;
+const cellWidth = 3;
 
 // To keep each cell roughly uniform, determine the number of cells can fit 
 // in the window along their respective axes.
@@ -39,6 +39,9 @@ let controller = new Controller(window, waveSolver);
 
 // When window resizes, reset everything.
 function OnWindowResize() {
+    cellCountX = Math.floor(window.innerWidth / cellWidth);
+    cellCountY = Math.floor(window.innerHeight / cellWidth);
+    
     waveSolver = new WaveSolver(cellCountX, cellCountY);
     controller = new Controller(window, waveSolver);
 

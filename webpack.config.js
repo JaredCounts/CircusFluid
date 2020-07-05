@@ -5,20 +5,17 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 
 module.exports = {
-  // mode: 'development',
+  mode: 'development',
 
   entry: './src/app.ts',
 
   output: {
     filename: './dist/bundle.js',
-    // path: resolve(__dirname, 'dist'),
   },
 
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
-
-  // devtool: 'source-map',
 
   module: {
     rules: [
@@ -45,8 +42,8 @@ module.exports = {
   },
 
   plugins: [
-    // new CheckerPlugin(),
-    // new ProgressBarPlugin(),
+    new CheckerPlugin(),
+    new ProgressBarPlugin(),
     new HtmlWebpackPlugin({
       template: `${__dirname}/src/index.html`,
       filename: 'index.html',
