@@ -1,6 +1,3 @@
-// add styles
-// import './style.css';
-
 import { WaveSolver } from './waveSolver'
 import { View } from './view'
 import { Controller } from './controller'
