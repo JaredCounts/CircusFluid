@@ -1,14 +1,14 @@
 /**
- * Standard JS touch events don't provide a previous position for each given touch.
- * This class is used for that.
+ * Standard JS touch events don't provide a previous position for each given 
+ * touch. We use this class to supplement that behavior.
  */
 export class TouchPos {
 
-    private posX: number;
-    private posY: number;
+    private posX : number;
+    private posY : number;
 
-    private prevPosX: number; 
-    private prevPosY: number;
+    private prevPosX : number; 
+    private prevPosY : number;
 
     constructor(posX: number, posY: number) {
         this.posX = posX;

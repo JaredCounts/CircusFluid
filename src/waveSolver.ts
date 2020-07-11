@@ -31,7 +31,7 @@ export class WaveSolver {
         // parameters to get them to match what I had before.
         for (let i = 0; i < this._velocity.length; i++) {
             for (let j = 0; j < this._velocity[i].length; j++) {
-                let densDiff = 
+                const densDiff = 
                     this._GetAdjacentSum(this._density, i, j) 
                     - 4.0 * this._density[i][j];
                 

@@ -41,10 +41,10 @@ export class View {
         this._textureWidth = this._waveSolver.GetCellCountX();
         this._textureHeight = this._waveSolver.GetCellCountY();
 
-        let textureSize = this._textureWidth * this._textureHeight;
+        const textureSize = this._textureWidth * this._textureHeight;
         this._textureData = new Uint8Array(3 * textureSize);
 
-        let texture = new THREE.DataTexture(
+        const texture = new THREE.DataTexture(
             this._textureData, 
             this._textureWidth, 
             this._textureHeight, 
@@ -57,8 +57,8 @@ export class View {
 
         // Size the geometry to match the arbitrary screen coordinates I chose
         // above.
-        let geometry = new THREE.PlaneGeometry(100, 100);
-        let plane = new THREE.Mesh(geometry, this._material);
+        const geometry = new THREE.PlaneGeometry(100, 100);
+        const plane = new THREE.Mesh(geometry, this._material);
         this._scene.add( plane );
 
         this._camera.position.x = 0;
@@ -77,46 +77,46 @@ export class View {
         this._renderer.render(this._scene, this._camera);
     }
 
-    GetDomElement() {
+    GetDomElement() : HTMLElement {
         return this._renderer.domElement;
     }
 
     private _Update() : void {
         // Update the data texture to reflect the wave solver state.
 
-        let countX = this._waveSolver.GetCellCountX();
-        let countY = this._waveSolver.GetCellCountY();
+        const countX = this._waveSolver.GetCellCountX();
+        const countY = this._waveSolver.GetCellCountY();
 
-        let cellSizeX = this._textureWidth / countX;
-        let cellSizeY = this._textureHeight / countY;
+        const cellSizeX = this._textureWidth / countX;
+        const cellSizeY = this._textureHeight / countY;
 
         for (let j = 0; j < this._textureHeight; j++) {
             for (let i = 0; i < this._textureWidth; i++) {
-                let index = i + j * this._textureWidth;
+                const index = i + j * this._textureWidth;
 
                 // Calculate the data texture pixel position
-                let x = i / this._textureWidth * 2 - 1;
-                let y = j / this._textureHeight * 2 - 1;
+                const x = i / this._textureWidth * 2 - 1;
+                const y = j / this._textureHeight * 2 - 1;
 
-                let pixel = new THREE.Vector2(x, y);
+                const pixel = new THREE.Vector2(x, y);
 
                 // Calculate the wave solver cell position
-                let cellI = i / cellSizeX;
-                let cellJ = j / cellSizeY;
+                const cellI = i / cellSizeX;
+                const cellJ = j / cellSizeY;
 
-                let density = this._waveSolver.GetDensity(cellI, cellJ);
-                let velocity = this._waveSolver.GetVelocity(cellI, cellJ);
+                const density = this._waveSolver.GetDensity(cellI, cellJ);
+                const velocity = this._waveSolver.GetVelocity(cellI, cellJ);
 
                 // Compute the color from HSV space
-                let hsl = this._HsvToHsl(
+                const hsl = this._HsvToHsl(
                     0.5 + 0.5 * Math.sin(density*0.0004), 
                     1.0, 
                     0.5 + 0.5 * Math.sin(velocity*0.01));
 
-                let color = new THREE.Color();
+                const color = new THREE.Color();
                 color.setHSL(hsl[0], hsl[1], hsl[2]);
 
-                let stride = index * 3;
+                const stride = index * 3;
                 this._textureData[stride]     = Math.floor(color.r * 255);
                 this._textureData[stride + 1] = Math.floor(color.g * 255);
                 this._textureData[stride + 2] = Math.floor(color.b * 255);
@@ -131,9 +131,9 @@ export class View {
      * Convert hue/saturation/variance to hue/saturation/luminance.
      * Borrowed from https://stackoverflow.com/a/31851617/456460
      */
-    private _HsvToHsl(h, s, v) {
+    private _HsvToHsl(h : number, s : number, v : number) : Array<number> {
         // both hsv and hsl values are in [0, 1]
-        let l = (2 - s) * v / 2;
+        const l = (2 - s) * v / 2;
 
         if (l != 0) {
             if (l == 1) {

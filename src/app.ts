@@ -6,7 +6,7 @@ import { View } from './view'
 import { Controller } from './controller'
 import { TimeManager } from './timeManager'
 
-const cellWidth = 3;
+const cellWidth = 4;
 
 // To keep each cell roughly uniform, determine the number of cells can fit 
 // in the window along their respective axes.
@@ -20,11 +20,11 @@ let waveSolver = new WaveSolver(cellCountX, cellCountY);
 // the dom elements.
 let view;
 function ResetView() : void {
-    let appElement = document.getElementById('app');
+    const appElement = document.getElementById('app');
 
     // When updating the view, we need to be sure to replace the old dom element 
     // instead of just adding a new one.
-    let oldDomElement = view == null ? null : view.GetDomElement();
+    const oldDomElement = view == null ? null : view.GetDomElement();
     view = new View(appElement, waveSolver);
 
     if (oldDomElement == null) {

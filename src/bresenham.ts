@@ -11,11 +11,11 @@ export function Bresenham(
     endX : number, endY : number,
     callback : bresenhamCallbackType) : void 
 {
-    let dx = Math.abs(endX - startX);
-    let dy = Math.abs(endY - startY);
+    const dx = Math.abs(endX - startX);
+    const dy = Math.abs(endY - startY);
 
-    let sx = startX < endX ? 1 : -1;
-    let sy = startY < endY ? 1 : -1;
+    const sx = startX < endX ? 1 : -1;
+    const sy = startY < endY ? 1 : -1;
     
     let err = dx - dy;
     let x = startX;

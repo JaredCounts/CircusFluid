@@ -30,14 +30,6 @@ module.exports = {
           'image-webpack-loader?bypassOnDebug&optipng.optimizationLevel=7&gifsicle.interlaced=false',
         ],
       },
-      {
-        test: /\.css$/i,
-        loader: 'css-loader', 
-        options: {
-          import: true,
-        },
-        // style-loader', 'css-loader
-      },
     ],
   },
 

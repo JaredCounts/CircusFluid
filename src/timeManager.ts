@@ -37,7 +37,7 @@ export class TimeManager {
                 (elapsed_ms + this._leftoverTime_ms) / this._timestep_ms);
         
         // The leftover time is any amount of time in the total elapsed time 
-        // that can't fit int a single timestep.
+        // that can't fit into a single timestep.
         this._leftoverTime_ms = 
             (elapsed_ms + this._leftoverTime_ms) 
                 - timestepCount * this._timestep_ms;
