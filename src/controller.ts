@@ -37,7 +37,7 @@ export class Controller {
     HandleTouchStart(event) : void {
         // Find new touches and add a little force at that spot.
 
-        const force = 250000;
+        const force = 187500;
 
         const knownIdentifiers = new Set();
 
@@ -79,7 +79,7 @@ export class Controller {
 
         // Apply force along the segment between each touch's prior and current
         // positions.
-        const force = 10000;
+        const force = 7500;
         for (const TouchPos of this._identifierToTouchPos.values()) {
 
             const prevCellCoord = 
@@ -142,7 +142,7 @@ export class Controller {
         // If the mouse is down, add some force along the segment between
         // the previous and current mouse positions.
         if (this._mouseDown) {
-            const force = 10000;
+            const force = 7500;
 
             const prevCellCoord = this._ScreenToCellCoords(this._mousePos);
             const cellCoord = this._ScreenToCellCoords(this._prevMousePos);
@@ -157,7 +157,7 @@ export class Controller {
     HandleMouseClick(event) : void {
         this._UpdateMousePos(this._PageToScreen(event.pageX, event.pageY));
 
-        const force = 250000;
+        const force = 187500;
         const cellCoord = this._ScreenToCellCoords(this._mousePos);
         this._waveSolver.AddVelocity(force, cellCoord.x, cellCoord.y);
     }

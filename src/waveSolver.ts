@@ -18,7 +18,7 @@ export class WaveSolver {
         this._prevVelocity = [];
         this._prevDensity = [];
 
-        this._friction = 0.994;
+        this._friction = 0.992;
         this._speed = 50;
 
         // Fill the 2D arrays with all zeroes.
@@ -134,7 +134,7 @@ export class WaveSolver {
         
         this._velocity[Math.floor(cellI)][Math.floor(cellJ)] += amount;
     }
-    
+
     /**
      * Extrapolate from the previous and current values given an extrapolation 
      * amount. The previous value is assumed to be at time = -1, current value
