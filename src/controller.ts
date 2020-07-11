@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { WaveSolver } from './waveSolver'
 import { TouchPos } from './touchPos'
-import { Bresenham } from './bresenham'
+import { BresenhamLine } from './bresenham'
 
 /**
  * Handle user interactions.
@@ -91,10 +91,10 @@ export class Controller {
                 this._ScreenToCellCoords(
                     new THREE.Vector2(TouchPos.GetPosX(), TouchPos.GetPosY()));
 
-            Bresenham(
+            BresenhamLine(
                 prevCellCoord.x, prevCellCoord.y,
                 cellCoord.x, cellCoord.y,
-                this._ClampedAddVelocity.bind(this, force));
+                this._waveSolver.AddVelocity.bind(this._waveSolver, force));
         }
     }
 
@@ -147,10 +147,10 @@ export class Controller {
             const prevCellCoord = this._ScreenToCellCoords(this._mousePos);
             const cellCoord = this._ScreenToCellCoords(this._prevMousePos);
 
-            Bresenham(
+            BresenhamLine(
                 prevCellCoord.x, prevCellCoord.y,
                 cellCoord.x, cellCoord.y,
-                this._ClampedAddVelocity.bind(this, force));
+                this._waveSolver.AddVelocity.bind(this._waveSolver, force));
         }
     }
 
@@ -182,23 +182,6 @@ export class Controller {
         for (const binding of bindings) {
             this._parentElement.addEventListener(...binding);
         }
-    }
-
-    /**
-     * Given a force, adds that amount to the velocity at the x y coordinates
-     * given. This first clamps the x and y coords.
-     */
-    private _ClampedAddVelocity(force: number, x: number, y: number) : void {
-        const cellI = 
-            THREE.MathUtils.clamp(x, 
-                /* min */ 0, 
-                /* max */ this._waveSolver.GetCellCountX() - 1);
-        const cellJ = 
-            THREE.MathUtils.clamp(y,
-                /* min */ 0, 
-                /* max */ this._waveSolver.GetCellCountY() - 1);
-        
-        this._waveSolver.AddVelocity(force, cellI, cellJ);
     }
 
     private _UpdateMousePos(pos : THREE.Vector2) : void {

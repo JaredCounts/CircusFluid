@@ -53,4 +53,16 @@ export class TimeManager {
         // Remember this time as the last update time.
         this._lastUpdateTime = time;
     }
+
+
+    /**
+     * Return the amount of time since the last update in units of timesteps.
+     */
+    GetTimeSinceLastUpdate_timestep() : number {
+        let time = Date.now();
+        
+        let elapsed_ms = time - this._lastUpdateTime + this._leftoverTime_ms;
+
+        return elapsed_ms / this._timestep_ms;
+    }
 }

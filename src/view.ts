@@ -72,8 +72,8 @@ export class View {
     /**
      * Update the scene to match the current wave solver and render.
      */
-    Render() : void {
-        this._Update();
+    Render(extrapolateAmount : number) : void {
+        this._Update(extrapolateAmount);
         this._renderer.render(this._scene, this._camera);
     }
 
@@ -81,7 +81,7 @@ export class View {
         return this._renderer.domElement;
     }
 
-    private _Update() : void {
+    private _Update(extrapolateAmount : number) : void {
         // Update the data texture to reflect the wave solver state.
 
         const countX = this._waveSolver.GetCellCountX();
@@ -104,14 +104,18 @@ export class View {
                 const cellI = i / cellSizeX;
                 const cellJ = j / cellSizeY;
 
-                const density = this._waveSolver.GetDensity(cellI, cellJ);
-                const velocity = this._waveSolver.GetVelocity(cellI, cellJ);
+                const density = 
+                    this._waveSolver.GetDensity(
+                        cellI, cellJ, extrapolateAmount);
+                const velocity = 
+                    this._waveSolver.GetVelocitySmoothed(
+                        cellI, cellJ, extrapolateAmount);
 
                 // Compute the color from HSV space
                 const hsl = this._HsvToHsl(
-                    0.5 + 0.5 * Math.sin(density*0.0004), 
+                    0.5 + 0.5 * Math.sin(density*0.1), 
                     1.0, 
-                    0.5 + 0.5 * Math.sin(velocity*0.01));
+                    0.5 + 0.5 * Math.sin(velocity * 0.01));
 
                 const color = new THREE.Color();
                 color.setHSL(hsl[0], hsl[1], hsl[2]);

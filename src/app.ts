@@ -53,7 +53,7 @@ function Animate() : void {
         waveSolver.Solve.bind(waveSolver));
 
     if (view != null) {
-        view.Render();
+        view.Render(timestepManager.GetTimeSinceLastUpdate_timestep());
     }
 }
 
