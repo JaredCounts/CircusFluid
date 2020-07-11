@@ -14,7 +14,7 @@ module.exports = {
   },
 
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.css'],
   },
 
   module: {
@@ -32,7 +32,11 @@ module.exports = {
       },
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
+        loader: 'css-loader', 
+        options: {
+          import: true,
+        },
+        // style-loader', 'css-loader
       },
     ],
   },

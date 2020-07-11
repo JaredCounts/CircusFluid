@@ -20,7 +20,6 @@ export class Controller {
     
     private readonly _parentElement;
 
-
     constructor(window, parentElement, waveSolver : WaveSolver) {
         this._waveSolver = waveSolver;
 
@@ -32,7 +31,7 @@ export class Controller {
 
         this._parentElement = parentElement;
 
-        this._RegisterForEvents(window)
+        this._RegisterForEvents()
     }
 
     HandleTouchStart(event) : void {
@@ -164,19 +163,25 @@ export class Controller {
     }
 
     /**
-     * Given the window, this adds the controller's handlers to their
-     * respective events.
+     * This adds the controller's handlers to their respective events in the
+     * parent element.
      */
-    private _RegisterForEvents(window) : void {
-        window.addEventListener('touchmove', this.HandleTouchMove.bind(this));
-        window.addEventListener('touchstart', this.HandleTouchStart.bind(this));
-        window.addEventListener('touchend', this.HandleTouchEnd.bind(this));
-        window.addEventListener('touchleave', this.HandleTouchEnd.bind(this));
+    private _RegisterForEvents() : void {
+        const bindings = [
+            ['touchmove', this.HandleTouchMove.bind(this)],
+            ['touchstart', this.HandleTouchStart.bind(this)],
+            ['touchend', this.HandleTouchEnd.bind(this)],
+            ['touchleave', this.HandleTouchEnd.bind(this)],
+            ['mousemove', this.HandleMouseMove.bind(this)],
+            ['mousedown', this.HandleMouseDown.bind(this)],
+            ['mouseup', this.HandleMouseUp.bind(this)],
+            ['mouseleave', this.HandleMouseUp.bind(this)],
+            ['click', this.HandleMouseClick.bind(this)]
+        ];
 
-        window.addEventListener('mousemove', this.HandleMouseMove.bind(this));
-        window.addEventListener('mousedown', this.HandleMouseDown.bind(this));
-        window.addEventListener('mouseup', this.HandleMouseUp.bind(this));
-        window.addEventListener('click', this.HandleMouseClick.bind(this));
+        for (let binding of bindings) {
+            this._parentElement.addEventListener(...binding);
+        }
     }
 
     /**
@@ -210,8 +215,8 @@ export class Controller {
         let elementY = pageY - this._parentElement.offsetTop;
 
         return new THREE.Vector2(
-            ((elementX / window.innerWidth) * 2 - 1) * 50,
-            (-(elementY / window.innerHeight) * 2 + 1) * -50);
+            ((elementX / this._parentElement.offsetWidth) * 2 - 1) * 50,
+            (-(elementY / this._parentElement.offsetHeight) * 2 + 1) * -50);
     }
 
     /** 

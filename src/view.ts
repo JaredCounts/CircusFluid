@@ -27,8 +27,6 @@ export class View {
         this._renderer = new THREE.WebGLRenderer();
         this._renderer.setSize(
             parentElement.offsetWidth, parentElement.offsetHeight);
-        
-        console.log("size",parentElement.offsetWidth, parentElement.offsetHeight);
 
         // I somewhat arbitrarily chose a screen that goes [-50,50] along each
         // axis.
