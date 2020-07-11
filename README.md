@@ -1,6 +1,6 @@
 # Circus Fluid
 
-Implemented in Typescript + Three.js. See my portfolio page for this project: http://jaredcounts.com/circus/
+Implemented in Typescript + Three.js. See my portfolio page for a demo of this project: http://jaredcounts.com/circus/
 
 Boilerplate borrowed from https://github.com/pinqy520/three-typescript-starter
 
